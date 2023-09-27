@@ -1,0 +1,8 @@
+table 1: not needed
+table 2: unconditional_continuous_750.tex (proj2) generate_all_tables_uncon.R
+table 3: unconditional_comparison_750.tex (proj2) generate_all_tables_uncon.R
+table 4: not needed
+table 5: extracted_test.tex (proj2) Conditional_MC_extract.R
+table 6: introductory_tables_v4.tex (proj6) introductory_tables.Rmd
+table 7: unconditional_spectraltests.tex (proj6) unconditional_spectraltests.Rmd
+table 8: conditional_twowindows.tex (proj6) conditional_test_textable.R

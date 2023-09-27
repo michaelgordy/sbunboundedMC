@@ -1,0 +1,100 @@
+---
+title: "Explaining power in the TLSF kernel"
+author: "Michael Gordy"
+date: "`r Sys.Date()`"
+output: 
+   html_document:
+       code_folding: hide
+---
+
+```{r setup, message=FALSE}
+#knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(fig.width = 9.5)
+
+
+library(ggplot2)
+library(spectralBacktest)
+library(purrr)
+library(dplyr)
+library(tidyr)
+source("helperFiles/DefineKernels.R")
+
+support<- c(0.95,1)
+
+
+PIT <- 1-10^seq(log10(1-1.01*support[1]),log10(1-0.999999*support[2]),length.out=250)
+kern_vec2 <- c("PNS","LLS", "GS","GcS")
+kernel_list <- define_kernels_tlsf(support[1], support[2])[kern_vec2]
+kernnames <- data.frame(mnemonic=kern_vec2) |>
+  mutate(kernel=purrr::map_chr(mnemonic, ~kernel_list[[.x]]$name))
+
+
+
+```
+
+In this notebook we explore the determinants of power in TLSF spectral backtests.
+We start with the observation that the rank order of tests in power against alternatives seems to be "explained" by tail behavior of the Mahalanobis distance 
+$$M_\nu(u) = \sqrt{\nu(u)\Sigma_\nu^{-1}\nu(u)^\prime}$$ as a function of $u$ where the bivariate kernel $\nu$ is centered but not scaled to unit variance. We fix a kernel window of $[0.95,1]$ throughout. Both axes are on log scale.
+
+Note that the line for the `Logit-Logistic` coincides almost perfectly with the `Gumbel`.
+
+```{r}
+
+tlsfsig <- function(tlsfkernel, PIT) {
+  W_list <- tlsfkernel$nu(tlsfkernel$support, tlsfkernel$param)(PIT)
+  Wbar <- purrr::list_transpose(W_list, simplify=TRUE)
+  Sigma<-tlsfkernel$VCV(tlsfkernel$support, tlsfkernel$param)
+  purrr::map_dbl(Wbar, ~sqrt(mahalanobis(.x, center=0, cov=Sigma)))
+}
+df1 <- purrr::map_dfc(kernel_list, ~tlsfsig(.x,PIT)) |>
+  mutate(PIT=PIT) |>
+  tidyr::pivot_longer(cols=-PIT, names_to = "mnemonic", values_to = "value") |>
+  dplyr::left_join(kernnames, by="mnemonic")
+
+ggplot(df1, aes(x=1-PIT, y=value, color=kernel, group=kernel)) + 
+    geom_line() + scale_x_log10() + scale_y_log10() +
+    labs(x="1-PIT",y="M(PIT)")
+
+```
+
+But there is a simpler explanation.  Since the $G_2(u)$ kernel dominates $M_\nu(u)$ asymptotically as $u\rightarrow 1$, we could as easily look at $G_2(u)$.
+
+```{r}
+G2 <- function(tlsfkernel, PIT) {
+  W_list <- tlsfkernel$nu(tlsfkernel$support, tlsfkernel$param)(PIT)
+  W_list[[2]]
+}
+df2 <- purrr::map_dfc(kernel_list, ~G2(.x,PIT)) |>
+  mutate(PIT=PIT) |>
+  tidyr::pivot_longer(cols=-PIT, names_to = "mnemonic", values_to = "value") |>
+  dplyr::left_join(kernnames, by="mnemonic")
+
+ggplot(df2, aes(x=1-PIT, y=value, color=kernel, group=kernel)) + 
+    geom_line() + scale_x_log10() + scale_y_log10() +
+    labs(x="1-PIT",y="G_2(PIT)")
+
+
+```
+
+Since it takes into account the behavior of both kernels, I suspect $M_\nu(u)$ might be a little more robust in explaining power differences when applied to bounded kernels.
+
+Below we reproduce Alex's base plot.  The asymptote lines are $y=-1+x$ and $y=-6+2x$. 
+```{r}
+
+df3 <- df2 |> mutate(x=-log(1-PIT), 
+  kernel=forcats::fct_relevel(kernel, "Probitnormal score", "Logit-Logistic score",
+                       "Gumbel score", "Comp Gumbel score"))
+lw <- 0.4  # linewidth
+p <- ggplot(df3, aes(x, y=value, color=kernel, group=kernel)) + 
+  geom_line() + 
+  labs(x=expression(-ln(1-PIT)),y=expression(G[2](PIT)-mu[2])) +
+  geom_vline(xintercept=-log(c(0.01, 0.001,0.0001)), linetype=3, linewidth=lw, show.legend = FALSE) +
+  annotate("text", x=-log(0.007), y=50, label="99%") + 
+  annotate("text", x=-log(0.00065), y=50, label="99.9%") +
+  annotate("text", x=-log(0.00006), y=50, label="99.99%") +
+  geom_abline(intercept=-1,slope=1, linetype=4, linewidth=lw) +
+  geom_abline(intercept=-6,slope=2, linetype=4, linewidth=lw) 
+ggsave("tables/tailbehavior.pdf", plot=p)
+p
+```
+

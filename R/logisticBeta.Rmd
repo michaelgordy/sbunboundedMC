@@ -1,0 +1,165 @@
+---
+title: "Diagnostics for the Logistic Beta TLSF kernel"
+author: "Michael Gordy"
+date: "`r Sys.Date()`"
+output: 
+   html_document:
+       code_folding: hide
+---
+
+```{r setup, message=FALSE}
+#knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(fig.width = 9.5)
+
+
+library(ggplot2)
+library(spectralBacktest)
+library(purrr)
+library(dplyr)
+library(tidyr)
+source("helperFiles/DefineKernels.R")
+
+support<- c(0.95,1)
+
+tlsfsig <- function(tlsfkernel, PIT) {
+  W_list <- tlsfkernel$nu(tlsfkernel$support, tlsfkernel$param)(PIT)
+  Wbar <- purrr::list_transpose(W_list, simplify=TRUE)
+  Sigma<-tlsfkernel$VCV(tlsfkernel$support, tlsfkernel$param)
+  purrr::map_dbl(Wbar, ~sqrt(mahalanobis(.x, center=0, cov=Sigma)))
+}
+PIT <- seq(1.0001*support[1],0.9999999*support[2],length.out=250)
+kern_vec2 <- c("PNS","LLS", "GS","GcS", "LB1", "LB1c", "LB2", "LB2c", "LB3", "LB3c",
+               "LLtest", "LBtest", "LBtestc", "LBtest1","LBtest2","LBup","LBdown")
+kernel_list <- define_kernels_tlsf(support[1], support[2])[kern_vec2]
+kernnames <- data.frame(mnemonic=kern_vec2) |>
+  mutate(kernel=purrr::map_chr(mnemonic, ~kernel_list[[.x]]$name))
+df <- purrr::map_dfc(kernel_list, ~tlsfsig(.x,PIT)) |>
+  mutate(PIT=PIT) |>
+  tidyr::pivot_longer(cols=-PIT, names_to = "mnemonic", values_to = "value") |>
+  dplyr::left_join(kernnames, by="mnemonic")
+
+subsetplot <- function(df, kmnem) {
+  df1 <- df |> filter(mnemonic %in% kmnem)
+  p <- ggplot(df1, aes(x=1-PIT, y=value, color=kernel, group=kernel)) + 
+    geom_line() +
+    scale_y_log10() +
+    labs(x="PIT",y="Mahalanobis distance (log scale)")
+  return(p)
+}
+```
+
+In this notebook we visualize the Logistic Beta kernel to check whether "nearby" kernels behave similarly.  Specifically, we plot the Mahalanobis distance 
+$$M_\nu(\alpha) = \sqrt{\nu(\alpha)\Sigma_\nu^{-1}\nu(\alpha)^\prime}$$ as a function of $\alpha$ where the bivariate kernel $\nu$ is centered but not scaled to unit variance. In each exercise below, we compare the logit-logistic score kernel against alternatives. We fix a kernel window of $[0.95,1]$ throughout.
+
+First we compare against the benchmark TLSF kernels include as Examples in the paper. It is interesting that the `Gumbel` is almost indistinguishable from the `Logit-Logistic Score` (LLS), even though the Gumbel has positive skewness (1.14) and higher kurtosis (5.4 for Gumbel vs 4.2 for LLS).
+```{r}
+subsetplot(df, c("LLS", "PNS", "GS", "GcS"))
+```
+
+For the Logistic Beta family, it is straightforward to calculate skewness and kurtosis for the untruncated distribution (i.e., assuming a support of the unit interval). The following table confirms that distributions with nearby parameters have nearby higher moments and that complementary distributions differ only in the sign of skewness. Whether these properties of the untruncated distributions are reliable guides to the behavior of the corresponding score kernels is an open question. 
+
+```{r}
+
+LBkernels <- data.frame(mnemonic=kern_vec2) |>
+  filter(!(mnemonic %in% c("PNS", "GS", "GcS", "LLS"))) |> 
+  mutate(a=purrr::map_dbl(mnemonic, ~kernel_list[[.x]]$param[1]),
+         b=purrr::map_dbl(mnemonic, ~kernel_list[[.x]]$param[2]),
+         skewness=purrr::map_dbl(mnemonic,~cumulants_logisticbeta(kernel_list[[.x]]$param)$skewness),
+         kurtosis=purrr::map_dbl(mnemonic,~cumulants_logisticbeta(kernel_list[[.x]]$param)$kurtosis)) |>
+  select(-mnemonic) |> arrange(kurtosis, skewness)
+
+knitr::kable(LBkernels, caption="Higher moments of the Logistic Beta(a,b) distribution")
+```
+
+
+In the next plot, we verify that `Logistic Beta(0.98,0.98)` and  `Logistic Beta(1.02,1.02)` both closely approximate the `Logit-Logistic Score`. We have confirmed (not shown) that the `Logistic Beta(1,1)` matches `LLS` exactly.  
+
+```{r}
+subsetplot(df, c("LLS", "LBtest1", "LBtest2"))
+```
+
+
+```{r include=FALSE}
+
+# To explore this puzzle, we first confirm that the $\nu_1$ and $\nu_2$ functions change sensibly with the parameters. In the left panel of the figure below, we see that $\nu_1$ is linear for LLS and nearly so for the nearby `Logistic Beta(a,a)` kernels. The value of $\nu_1$ is roughly proportional to parameter $a$. As  $\nu_2$ is unbounded, it is plotted in the right panel on a log scale. The lines nearly coincide.
+
+maptonu <- function(tlsfkernel) {
+  nuPIT <- tlsfkernel$nu(tlsfkernel$support, tlsfkernel$param)(PIT)
+  data.frame(
+    name=tlsfkernel$name, PIT=PIT, nu1=nuPIT[[1]], nu2=nuPIT[[2]]
+  ) |>
+    tidyr::pivot_longer(cols=c(nu1,nu2), names_to = "kernel", values_to = "nu")
+}
+closekernels <- kernel_list[c("LLS", "LBtest1", "LBtest2")]
+dfnu <- closekernels |> 
+  purrr::map(maptonu) |>
+  dplyr::bind_rows()
+
+ggplot(dfnu, aes(x=PIT, y=nu, color=name, group=name)) +
+  geom_line() + labs(y=expression(nu)) +   scale_y_log10() +
+  facet_wrap(~kernel, ncol=2, scales = "free_y")
+```
+```{r include=FALSE}
+# The culprit appears to be in the variance matrix $\Sigma_\nu$. At first glance, it appears to change smoothly with $a$:
+
+maptoVCV <- function(tlsfkernel) {
+  tlsfkernel$VCV(tlsfkernel$support, tlsfkernel$param) 
+}
+longnames <- purrr::map_chr(closekernels,~.x$name) 
+closekernelsVCV <- closekernels |> 
+  purrr::map(maptoVCV) |>
+  set_names(longnames)
+
+print(closekernelsVCV)
+  
+```
+
+
+```{r include=FALSE}
+
+#However, the Mahalanobis distance depends on $\Sigma_\nu$ through its inverse. When we look directly at the $\Sigma_\nu^{-1}$ matrices, the variation with parameter $a$ does not seem so sensible. (I have verified that the `Logistic-Beta` kernel at parameter (1,1) returns $\nu$ and $\Sigma_\nu$ identical to the LLS.)
+
+closekernelsVCVinv <- purrr::map(closekernelsVCV,solve)
+print(closekernelsVCVinv)
+  
+```
+
+```{r include=FALSE}
+
+# The VCV matrices are somewhat poorly conditioned, though I should say that I'm not experienced in interesting these numbers. Function `rcond` returns:
+print(purrr::map_dbl(closekernelsVCV,rcond))
+
+```
+
+
+We compare the `Logit-Logistic Score` against two other symmetric Logistic Beta distributions. 
+
+```{r}
+subsetplot(df, c("LLS", "LBup", "LBdown"))
+```
+
+
+
+```{r, include=FALSE}
+
+#Here we consider a complementary pair of Logistic Beta kernels with slight skew. In contrast to the symmetric case, in the skew case the distribution with positive skew `LB(1.02,0.98)` is close to the `Logit-Logistic Score` rather than to its complement `LB(0.98,1.02)`.
+
+subsetplot(df, c("LLS", "LBtest", "LBtestc"))
+```
+
+The final three plots consider representative complementary pairs of Logistic Beta kernels. 
+
+```{r}
+subsetplot(df, c("LLS", "LB1", "LB1c"))
+```
+
+
+```{r}
+subsetplot(df, c("LLS", "LB2", "LB2c"))
+```
+
+```{r}
+subsetplot(df, c("LLS", "LB3", "LB3c"))
+```
+
+

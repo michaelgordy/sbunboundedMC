@@ -1,0 +1,17 @@
+\begin{table}[htbp]
+  \centering
+  \begin{tabular}{*{2}{l}*{8}{r}}
+    \toprule
+    window & \( F \) \textbar\ test & \multicolumn{1}{c}{BIN} & \multicolumn{1}{c}{LR1} & \multicolumn{1}{c}{PE2} & \multicolumn{1}{c}{LR2} & \multicolumn{1}{c}{PE3} & \multicolumn{1}{c}{LR3} & \multicolumn{1}{c}{ZPP} & \multicolumn{1}{c}{LRB} \\
+    \midrule
+    narrow & Normal & 6.1 & 4.1 & 4.8 & 6.3 & 5.3 & 8.2 & 4.8 & 5.5 \\
+    & Scaled t5 & 33.9 & 24.0 & 44.0 & 36.5 & 40.3 & 34.3 & 45.3 & 37.6 \\
+    & Scaled t3 & 24.0 & 16.1 & 50.7 & 47.7 & 43.4 & 46.5 & 50.9 & 49.2 \\ \addlinespace[3pt]
+    wide & Normal & 6.1 & 4.1 & 4.8 & 5.9 & 5.1 & 7.3 & 4.9 & 5.1 \\
+    & Scaled t5 & 33.9 & 24.0 & 60.7 & 57.1 & 55.5 & 53.0 & 59.2 & 57.7 \\
+    & Scaled t3 & 24.0 & 16.1 & 94.0 & 94.8 & 90.6 & 93.0 & 93.0 & 95.0 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Estimated size and power of unconditional Z-tests and LR-tests. Replications = 65536. The number of days in the backtest sample is n = 750. The narrow window is [0.985, 0.995] and the wide window is [0.95, 0.995].}
+  \label{table:unconditional-comparison_750}
+\end{table}
