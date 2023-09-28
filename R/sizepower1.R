@@ -26,9 +26,10 @@ betakerns <- list(
 kern_vec2 <- c("ZU", "ZA", "ZE", "ZLp", "Z1Q", "Z1E", "Z1Z", "Z2Z", "Z5Z") 
 F_names <- c("Normal", "Scaled t10", "Scaled t5", "Scaled t3")
 
-doOne <- function(n,Fmodel,kernel){
-  PIT <- choose_dist(Fmodel,n) |> pnorm() |> 
-    pmin(1-.Machine$double.eps)
+doOne <- function(n,Fmodel,vtransform=NULL,kernel){
+  PIT <- choose_dist(Fmodel,n) |> pnorm() 
+  if (is.function(vtransform))  PIT <- vtransform(PIT)
+  PIT <- pmin(PIT, 1-.Machine$double.eps)
   purrr::map_dbl(kernel, ~spectral_Ztest(.x, PIT))
 }
 

@@ -373,3 +373,19 @@ newBetaKernel <- function(support=c(0,1), param=c(1,1), kernelname=NULL) {
 #               correlation = rho_beta_beta,
 #               support = c(alpha1, alpha2),
 #               param = list(c(100,1), c(1,1), c(1,100)) ),
+
+# Implement Psi(x) = exp(-kappa*(-log(x))^xi)
+Vexplog <- function(u, delta=1/2,kappa=1,xi=1) {
+  Psi <- function(x) exp(-kappa*(-log(x))^xi)
+  Psiinv <- function(x) exp(-(log(x)/(-kappa))^(1/xi))
+  ifelse(u<=delta,
+         (1-u)-(1-delta)*Psi(u/delta),
+         u-delta*Psiinv((1-u)/(1-delta)))
+}
+
+vtransform_list <- list(
+  identity,
+  (\(u) abs(1-2*u)),
+  (\(u) Vexplog(u, delta=0.4)),
+  (\(u) Vexplog(u, xi=2)) 
+)
