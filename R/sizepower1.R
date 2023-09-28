@@ -1,33 +1,13 @@
-# Size and Power of Unbounded monovariate continuous Kernels
+# Size and Power of Unbounded monovariate beta kernels
+# Assumes current directory is the project folder
 # Michael Gordy
 
-library(simsalapar)
-library(spectralBacktest)
-#library(abind)
-library(future)
-#library(magrittr)
-library(dplyr)
-library(tidyr)
-library(gt)
-options(gt.html_tag_check = FALSE)
-
-#library(xtable)
-num_cores <- as.integer(parallelly::availableCores(omit=8))
-table_location <- "tables/"
-sim_location <- "simresults/"
-alpha_narrow <- c(0.98,1)
-alpha_wide <-  c(0.95,1)
-#alpha_star <- 0.99
+source("R/simSetup.R")
 n_days <- 500
-nsims <- 2^16
+nsims <- 2^8
+blk_size <- nsims/2^5
 savedata <- FALSE  # TRUE to have simsalapar save simulation data
 gtsavename <- 'sizepower_beta1'
-
-### Ideally this works
-source("helperFiles/DefineUtilities.R")
-source("helperFiles/DefineKernels.R")
-# source("helperFiles/DefineCVTs.R")
-blk_size <- nsims/2^5
 
 betakerns <- list(
   ZU = list(name='Uniform', param=list(c(1,1)), 
@@ -46,10 +26,6 @@ betakerns <- list(
 kern_vec2 <- c("ZU", "ZA", "ZE", "ZLp", "Z1Q", "Z1E", "Z1Z", "Z2Z", "Z5Z") 
 F_names <- c("Normal", "Scaled t10", "Scaled t5", "Scaled t3")
 
-# doOne <- function(n,Fmodel,kernel){
-#   PITs <- choose_dist(Fmodel,n) |> pnorm()
-#   purrr::map_dbl(as.list(kernel), ~spectral_Ztest(eval(parse(text=.x)), PITs))
-# }
 doOne <- function(n,Fmodel,kernel){
   PIT <- choose_dist(Fmodel,n) |> pnorm() |> 
     pmin(1-.Machine$double.eps)
@@ -113,7 +89,7 @@ res <- dplyr::bind_rows(narrow,wide) |>
   pivot_wider(names_from = collab, values_from = rejectrate) 
 
 save(narrow,wide,res,alpha_wide,alpha_narrow,nsims,n_days,
-     file=paste0("data/",gtsavename,".RData"))
+     file=paste0(sim_location,gtsavename,".RData"))
 
 tabL <- gt(res, groupname_col = "window") |>
   fmt_percent(columns=where(is.numeric), decimals=1) |>

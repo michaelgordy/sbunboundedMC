@@ -1,31 +1,20 @@
 library(simsalapar)
 library(spectralBacktest)
-library(abind)
-#library(here)
+#library(abind)
 library(future)
-library(magrittr)
-library(xtable)
+#library(magrittr)
+library(dplyr)
+library(tidyr)
+library(gt)
+options(gt.html_tag_check = FALSE)
 
 ### Ideally this works
-source("helperFiles/DefineUtilities.R")
-source("helperFiles/DefineKernels.R")
-source("helperFiles/DefineCVTs.R")
-source("helperFiles/DefineLRtests.R")
-
-
-table_location <- "tables/"
-sim_location <- "simresults/"
-alpha_narrow <- c(0.985,1)
-alpha_wide <- c(0.95,1)
-alpha_star <- 0.99
-
-narrow_name <- paste("[",paste(alpha_narrow,collapse=", "),"]",sep="")
-wide_name <- paste("[",paste(alpha_wide,collapse=", "),"]",sep="")
-
-n_days <- 750
-nsims <- 2^12
-blk_size <- nsims/2^5
-
-# Setting core number and blocksize
+source("R/DefineUtilities.R")
+source("R/DefineKernels.R")
 
 num_cores <- as.integer(parallelly::availableCores(omit=8))
+table_location <- "output/"
+sim_location <- "simdata/"
+alpha_narrow <- c(0.98,1)
+alpha_wide <-  c(0.95,1)
+#alpha_star <- 0.99

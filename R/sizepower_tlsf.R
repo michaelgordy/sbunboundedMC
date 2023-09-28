@@ -1,31 +1,14 @@
 # Size and Power of Unbounded Bivariate Kernels
+# Assumes current directory is the project folder
 # Michael Gordy
 
-library(simsalapar)
-library(spectralBacktest)
-#library(abind)
-library(future)
-#library(magrittr)
-library(dplyr)
-library(tidyr)
-library(gt)
-#library(xtable)
-num_cores <- as.integer(parallelly::availableCores(omit=8))
-table_location <- "tables/"
-sim_location <- "simresults/"
-alpha_narrow <- c(0.98,1)
-alpha_wide <-  c(0.95,1)
-alpha_star <- 0.99
+source("R/simSetup.R")
 n_days <- 500
-nsims <- 2^16
-savedata <- TRUE  # TRUE to have simsalapar save simulation data
+nsims <- 2^8
+blk_size <- nsims/2^5
+savedata <- FALSE  # TRUE to have simsalapar save simulation data
 gtsavename <- 'sizepower_tlsf'
 
-### Ideally this works
-source("helperFiles/DefineUtilities.R")
-source("helperFiles/DefineKernels.R")
-# source("helperFiles/DefineCVTs.R")
-blk_size <- nsims/2^5
 
 kern_vec2 <- c("PNS","LLS", "GS","GcS")
 F_names <- c("Normal", "Scaled t10", "Scaled t5", "Scaled t3")
@@ -69,7 +52,7 @@ res <- dplyr::bind_rows(rejectionrate(alpha_narrow, "wide"),
   pivot_wider(names_from = kernel, values_from = rejectrate) 
 
 save(res,alpha_wide,alpha_narrow,nsims,n_days,
-     file=paste0("data/",gtsavename,".RData"))
+     file=paste0(sim_location,gtsavename,".RData"))
 
 tabL <- gt(res, groupname_col = "window") |>
   fmt_percent(columns=where(is.numeric), decimals=1) |>
@@ -85,8 +68,7 @@ gt::gtsave(tabL,filename = paste0(gtfile,".tex"))
 # Correlation table
 getcorrelation <- function(tlsfkernel) {
   corkern <- tlsfkernel$VCV(tlsfkernel$support,tlsfkernel$param) |>
-    cov2cor()
-  corkern[1,2]  
+    cov2cor() |> (\(x) x[1,2])()
 }
 correlationTLSF <- function(support) {
   kernel_list <- define_kernels_tlsf(support[1], support[2])[kern_vec2]
