@@ -13,12 +13,6 @@ gtsavename <- 'sizepower_tlsf'
 kern_vec2 <- c("PNS","LLS", "GS","GcS")
 F_names <- c("Normal", "Scaled t10", "Scaled t5", "Scaled t3")
 
-doOne <- function(n,Fmodel,kernel){
-  PIT <- choose_dist(Fmodel,n) |> pnorm() |> 
-    pmin(1-.Machine$double.eps)
-  purrr::map_dbl(kernel, ~spectral_Ztest(.x, PIT))
-}
-
 # Run the simulation for a given window
 rejectionrate <- function(support,windowname,level=0.05) {
   kernel_list <- define_kernels_tlsf(support[1], support[2])[kern_vec2]

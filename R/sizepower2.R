@@ -21,12 +21,6 @@ kern_vec2 <- c("ZLL", "ZPP", "ZP4h", "ZP5h", "ZP9h")
 # kern_vec2 <- c("ZLL","ZPP","ZP0","PNS","LLS","GS","GcS")
 F_names <- c("Normal", "Scaled t10", "Scaled t5", "Scaled t3")
 
-doOne <- function(n,Fmodel,kernel){
-  PIT <- choose_dist(Fmodel,n) |> pnorm() |> 
-    pmin(1-.Machine$double.eps)
-  purrr::map_dbl(kernel, ~spectral_Ztest(.x, PIT))
-}
-
 makeBetaKernel <- function(betaspec,support, type="multi") {
   param <- betaspec$param
   #type <- c('mono', 'bi', 'multi')[min(3,length(param))]

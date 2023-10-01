@@ -14,7 +14,7 @@ options(gt.html_tag_check = FALSE)
 
 stopifnot((packageVersion("spectralBacktest")>="0.5.4"))
 
-source("R/DefineUtilities.R")
+source("R/DefineFmodels.R")
 source("R/DefineKernels.R")
 
 # Parameters shared across simulations
@@ -23,3 +23,18 @@ table_location <- "output/"
 sim_location <- "simdata/"
 alpha_narrow <- c(0.98,1)
 alpha_wide <-  c(0.95,1)
+
+# Standard "doOne" functions for simsalapar
+# When there is no v-transform
+doOne <- function(n,Fmodel,kernel){
+  PIT <- Fmodel_list[[Fmodel]](n) |> pnorm() |> 
+    pmin(1-.Machine$double.eps)
+  purrr::map_dbl(kernel, ~spectral_Ztest(.x, PIT))
+}
+# With v-transform
+doOneV <- function(n,Fmodel,Vmodel,kernel){
+  PIT <- Fmodel_list[[Fmodel]](n) |> pnorm() |>
+    vtransform_list[[Vmodel]]() |> pmin(1-.Machine$double.eps)
+  purrr::map_dbl(kernel, ~spectral_Ztest(.x, PIT))
+}
+
