@@ -5,7 +5,7 @@
 source("R/simSetup.R")
 source("R/DefineVtransforms.R")
 n_days <- 500
-nsims <- 2^8
+nsims <- 2^14
 blk_size <- nsims/2^5
 savedata <- FALSE  # TRUE to have simsalapar save simulation data
 gtsavename <- 'sizepower_beta1v'
