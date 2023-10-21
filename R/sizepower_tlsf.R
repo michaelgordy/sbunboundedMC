@@ -4,13 +4,13 @@
 
 source("R/simSetup.R")
 n_days <- 500
-nsims <- 2^8
+nsims <- 2^16
 blk_size <- nsims/2^5
 savedata <- FALSE  # TRUE to have simsalapar save simulation data
 gtsavename <- 'sizepower_tlsf'
 
 
-kern_vec2 <- c("PNS","LLS", "GS","GcS")
+kern_vec2 <- c("PNS", "GcS","GS", "LLS", "LB2","LB3c")
 F_names <- c("Normal", "Scaled t10", "Scaled t5", "Scaled t3")
 
 # Run the simulation for a given window
