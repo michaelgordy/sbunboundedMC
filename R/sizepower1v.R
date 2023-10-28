@@ -5,7 +5,7 @@
 source("R/simSetup.R")
 source("R/DefineVtransforms.R")
 n_days <- 500
-nsims <- 2^14
+nsims <- 2^9
 blk_size <- nsims/2^5
 savedata <- FALSE  # TRUE to have simsalapar save simulation data
 gtsavename <- 'sizepower_beta1v'
@@ -22,6 +22,7 @@ betakerns <- list(
 kern_vec2 <- c("ZU", "ZLp", "Z1Z", "Z2Z") 
 F_names <- c("Normal", "Scaled t10", "Scaled t5", "Scaled t3",
              "SS-t(10,1)", "SS-t(10,-1)", "SS-t(5,1)", "SS-t(5,-1)")
+vtransform_list <- vlaplace_list
 V_names <- names(vtransform_list)
 
 
