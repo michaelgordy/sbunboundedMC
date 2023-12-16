@@ -32,9 +32,15 @@ rsst_fs <- function (df, gamma=1)
   \(n) qsst_fs(runif(n), df, gamma)
 }
 
-
+# Return named list with a pair of FS-t(m,k/(k+1)) and FS-t(m,(k+1)/k)
+rsst_fs_list <- function(m,k) {
+  list(rsst_fs(m,(k+1)/k), rsst_fs(m,k/(k+1))) |>
+     setNames(c(glue::glue("FS-t({m},{k}/{k+1})"),
+                glue::glue("FS-t({m},{k+1}/{k})")))
+}
+  
 # Named list of available F models
-Fmodel_list <- list(
+Fmodel_list2 <- list(
   Normal = rnorm,
   "Scaled t10" = rscaled_t(10),
   "Scaled t5" = rscaled_t(5),
@@ -44,15 +50,31 @@ Fmodel_list <- list(
   "SS-t(5,1)" = rscaledskewed_t_sn(5,1),
   "SS-t(5,-1)" = rscaledskewed_t_sn(5,-1),
   "FS-t(10,3/2)" = rsst_fs(10,3/2),
-  "FS-t(10,2/3)" = rsst_fs(10,2/3), 
+  "FS-t(10,2/3)" = rsst_fs(10,2/3),
   "FS-t(5,3/2)" = rsst_fs(5,3/2),
-  "FS-t(5,2/3)" = rsst_fs(5,2/3),   
+  "FS-t(5,2/3)" = rsst_fs(5,2/3),
   "FS-t(3,3/2)" = rsst_fs(3,3/2),
   "FS-t(3,2/3)" = rsst_fs(3,2/3),
   "FS-t(10,6/5)" = rsst_fs(10,6/5),
-  "FS-t(10,5/6)" = rsst_fs(10,5/6), 
+  "FS-t(10,5/6)" = rsst_fs(10,5/6),
   "FS-t(5,6/5)" = rsst_fs(5,6/5),
-  "FS-t(5,5/6)" = rsst_fs(5,5/6),   
+  "FS-t(5,5/6)" = rsst_fs(5,5/6),
   "FS-t(3,6/5)" = rsst_fs(3,6/5),
   "FS-t(3,5/6)" = rsst_fs(3,5/6)
 )
+
+Fmodel_list <-  list(
+  list(
+  Normal = rnorm,
+  "Scaled t10" = rscaled_t(10),
+  "Scaled t5" = rscaled_t(5),
+  "Scaled t3" = rscaled_t(3),
+  "SS-t(10,1)" = rscaledskewed_t_sn(10,1),
+  "SS-t(10,-1)" = rscaledskewed_t_sn(10,-1),
+  "SS-t(5,1)" = rscaledskewed_t_sn(5,1),
+  "SS-t(5,-1)" = rscaledskewed_t_sn(5,-1)),
+ purrr::map(c(10,5,3), ~rsst_fs_list(.x,2)),
+ purrr::map(c(10,5,3), ~rsst_fs_list(.x,3)),
+ purrr::map(c(10,5,3), ~rsst_fs_list(.x,5))
+ ) |> purrr::list_flatten() |> purrr::list_flatten() 
+

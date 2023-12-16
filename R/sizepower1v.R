@@ -25,8 +25,14 @@ F_names <- c("Normal", "Scaled t10", "Scaled t5", "Scaled t3",
              "SS-t(5,1)", "SS-t(5,-1)", 
              "FS-t(10,6/5)", "FS-t(10,5/6)", 
              "FS-t(5,6/5)", "FS-t(5,5/6)",
+             "FS-t(3,6/5)", "FS-t(3,5/6)",
+             "FS-t(10,4/3)", "FS-t(10,3/4)", 
+             "FS-t(5,4/3)", "FS-t(5,3/4)",
+             "FS-t(3,4/3)", "FS-t(3,3/4)",
              "FS-t(10,3/2)", "FS-t(10,2/3)", 
-             "FS-t(5,3/2)", "FS-t(5,2/3)")
+             "FS-t(5,3/2)", "FS-t(5,2/3)",
+             "FS-t(3,3/2)", "FS-t(3,2/3)"
+             )
 vtransform_list <- vlaplace_list
 V_names <- names(vtransform_list)
 

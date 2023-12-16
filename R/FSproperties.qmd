@@ -1,0 +1,32 @@
+---
+title: "PIT distributions for Fernandez-Steel DGP"
+author: "Michael Gordy"
+format: 
+  html:
+    embed-resources: true
+---
+
+The power of our backtests is highly sensitive to the choice of v-transform and to parameters of the DGP when the true DGP $F$ is the Fernandez-Steel distribution. The exercises below are intended to shed light on these relationships. The notation $F(\cdot; df,\gamma)$ refers to the *standardized* FS distribution with *df* degrees of freedom and asymmetry parameter $\gamma$. A few key properties of this distribution:
+
+* If $X\sim F(df,\gamma)$ then $-X\sim F(df,1/\gamma)$. 
+* The skewness of $X$ is increasing in $\gamma$.
+
+```{r}
+source("DefineFmodels.R")
+source("DefineVtransforms.R")
+
+n <- 500000  # sample size
+uu <- runif(n) # to facilitate comparison across FS parameter values
+
+# For df=10, gma=6/5 similar to alpha=1
+# For df=5, gma=6/5 similar to alpha=2/3
+
+df <- 5
+gma <- 6/5
+
+x <- qsst_fs(uu,df,gma)
+xsst <- rscaledskewed_t_sn(df,2/3)(n)
+```
+
+The value of $\gamma=6/5$ delivers skewness around 2.9, which is comparable to the 
+
