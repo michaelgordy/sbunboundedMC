@@ -11,6 +11,36 @@ rscaledskewed_t_sn <- function(nu, alpha=0) {
   \(n) sn::rst(n,xi=xi,omega=omega,alpha=alpha,nu=nu)
 }
 
+# Return mu,sigma for standardized FS-t
+musigma_fs <- function(df, gamma=1) {
+  if (is.infinite(df)) {
+    M1 <- 2*dnorm(0)
+    M2 <- 1
+  } else {
+    M1 <- dt(0,df=df)*df/(df-1)*2 
+    M2 <- df/(df-2)
+  }
+  dist.mn <- M1*(gamma-1/gamma)
+  dist.var <- (M2-M1^2)*((gamma^2)+1/(gamma^2)) + 2*(M1^2) - M2
+  list(mu=dist.mn, sigma=sqrt(dist.var))
+}
+
+# Density of standardized FS-t
+dsst_fs <- function(x, df, gamma=1, .log=FALSE) {
+  mm <- musigma_fs(df, gamma)
+  z <- (x-mm$mu)/mm$sigma # standardize
+  suppressWarnings(
+    f <- ifelse(z<=0,
+                dt(gamma*z, df=df, log=.log), 
+                dt(z/gamma, df=df, log=.log))
+  )
+  if (.log) {
+    f - log(mm$sigma/2) + log(gamma/(1+gamma^2))
+  } else {
+    f*(2/mm$sigma)*gamma/(1+gamma^2)
+  }
+}
+
 # Standardized t in Fernandez-Steel class
 qsst_fs <- function (p, df, gamma=1) 
 {
@@ -20,11 +50,8 @@ qsst_fs <- function (p, df, gamma=1)
             (1/gamma) * qt(0.5*p/probzero, df), 
             gamma * qt(1/2+0.5*(p-probzero)/(gamma^2*probzero), df))
   )
-  M1 <- dt(0,df=df)*df/(df-1)*2 
-  dist.mn <- M1*(gamma-1/gamma)
-  M2 <- df/(df-2)
-  dist.var <- (M2-M1^2)*((gamma^2)+1/(gamma^2)) + 2*(M1^2) - M2
-  (q-dist.mn)/sqrt(dist.var)  # standardized q
+  mm<-musigma_fs(df,gamma)
+  (q-mm$mu)/mm$sigma  # standardized q
 }
 
 rsst_fs <- function (df, gamma=1) 
@@ -49,6 +76,8 @@ Fmodel_list2 <- list(
   "SS-t(10,-1)" = rscaledskewed_t_sn(10,-1),
   "SS-t(5,1)" = rscaledskewed_t_sn(5,1),
   "SS-t(5,-1)" = rscaledskewed_t_sn(5,-1),
+  "SS-t(3,1)" = rscaledskewed_t_sn(3,1),
+  "SS-t(3,-1)" = rscaledskewed_t_sn(3,-1),
   "FS-t(10,3/2)" = rsst_fs(10,3/2),
   "FS-t(10,2/3)" = rsst_fs(10,2/3),
   "FS-t(5,3/2)" = rsst_fs(5,3/2),
@@ -63,6 +92,7 @@ Fmodel_list2 <- list(
   "FS-t(3,5/6)" = rsst_fs(3,5/6)
 )
 
+nuval <- c(Inf,10,5,3)
 Fmodel_list <-  list(
   list(
   Normal = rnorm,
@@ -73,8 +103,17 @@ Fmodel_list <-  list(
   "SS-t(10,-1)" = rscaledskewed_t_sn(10,-1),
   "SS-t(5,1)" = rscaledskewed_t_sn(5,1),
   "SS-t(5,-1)" = rscaledskewed_t_sn(5,-1)),
- purrr::map(c(10,5,3), ~rsst_fs_list(.x,2)),
- purrr::map(c(10,5,3), ~rsst_fs_list(.x,3)),
- purrr::map(c(10,5,3), ~rsst_fs_list(.x,5))
+ purrr::map(nuval, ~rsst_fs_list(.x,2)),
+ purrr::map(nuval, ~rsst_fs_list(.x,3)),
+ purrr::map(nuval, ~rsst_fs_list(.x,5)),
+ purrr::map(nuval, ~rsst_fs_list(.x,20)),
+ purrr::map(nuval, ~rsst_fs_list(.x,25))
  ) |> purrr::list_flatten() |> purrr::list_flatten() 
 
+r_pit_sn <- function(n, nu, alf) {
+  rscaledskewed_t_sn(nu,alf)(n) |> pnorm()
+}
+
+r_pit_fs <- function(n, nu, gma) {
+  rsst_fs(nu,gma)(n) |> pnorm()
+}

@@ -11,13 +11,12 @@ output:
 #knitr::opts_chunk$set(echo = FALSE)
 knitr::opts_chunk$set(fig.width = 9.5)
 
-
+source("R/simSetup.R")
 library(ggplot2)
 library(spectralBacktest)
 library(purrr)
 library(dplyr)
 library(tidyr)
-source("helperFiles/DefineKernels.R")
 
 support<- c(0.95,1)
 
@@ -82,19 +81,21 @@ Below we reproduce Alex's base plot.  The asymptote lines are $y=-1+x$ and $y=-6
 ```{r}
 
 df3 <- df2 |> mutate(x=-log(1-PIT), 
-  kernel=forcats::fct_relevel(kernel, "Probitnormal score", "Logit-Logistic score",
-                       "Gumbel score", "Comp Gumbel score"))
+  kernel=forcats::fct_recode(kernel, Probitnormal="Probitnormal score", 
+                              Logistic="Logit-Logistic score",
+                       Gumbel="Gumbel score", `Comp Gumbel`="Comp Gumbel score"))
 lw <- 0.4  # linewidth
 p <- ggplot(df3, aes(x, y=value, color=kernel, group=kernel)) + 
-  geom_line() + 
+  geom_line() + ylim(0,35) +
   labs(x=expression(-ln(1-PIT)),y=expression(G[2](PIT)-mu[2])) +
+  theme_bw() +
   geom_vline(xintercept=-log(c(0.01, 0.001,0.0001)), linetype=3, linewidth=lw, show.legend = FALSE) +
   annotate("text", x=-log(0.007), y=50, label="99%") + 
   annotate("text", x=-log(0.00065), y=50, label="99.9%") +
   annotate("text", x=-log(0.00006), y=50, label="99.99%") +
   geom_abline(intercept=-1,slope=1, linetype=4, linewidth=lw) +
   geom_abline(intercept=-6,slope=2, linetype=4, linewidth=lw) 
-ggsave("tables/tailbehavior.pdf", plot=p)
+ggsave("tailbehavior.pdf", plot=p, width=6.5, heigh=3.5, units="in")
 p
 ```
 

@@ -5,25 +5,25 @@
 source("R/simSetup.R")
 source("R/DefineVtransforms.R")
 n_days <- 500
-nsims <- 2^16
+nsims <- 2^14
 level <- 0.05
 blk_size <- nsims/2^5
 savedata <- FALSE  # TRUE to have simsalapar save simulation data
-gtsavename <- 'sizepower_beta1v_varywindow'
+gtsavename <- 'sizepower_beta2v_varywindow'
 
+betaparm <- list(c(3,1),c(1,3))
+kernname <- "Beta(3,1)(1,3)"
 # Define two kernels, each with same beta parameters.
 # First has standard window, second has wider window
-betaparm <- c(1,0)
-Znarrow <- list( name = 'Narrow',
-                type = 'mono',
+# 
+Zwide <- Znarrow <- list( name = 'Narrow',
+                type = 'multi',
                 nu = nu_beta,
                 support = alpha_narrow,
+                correlation=rho_beta_beta,
                 param = betaparm )
-Zwide <- list( name = 'Wide',
-                 type = 'mono',
-                 nu = nu_beta,
-                 support = alpha_wide,
-                 param = betaparm )
+Zwide$support <- alpha_wide
+Zwide$name <- 'Wide'
 
 bk_list <- list(Znarrow, Zwide)
 # F_names <- c("Normal", "Scaled t10", "Scaled t5", "Scaled t3",
@@ -39,16 +39,14 @@ bk_list <- list(Znarrow, Zwide)
 #              "FS-t(5,3/2)", "FS-t(5,2/3)",
 #              "FS-t(3,3/2)", "FS-t(3,2/3)"
 # )
-# F_names <- c("Normal", 
-#              "FS-t(5,26/25)", "FS-t(5,25/26)",
-#              "FS-t(5,21/20)", "FS-t(5,20/21)",
-#              "FS-t(5,6/5)", "FS-t(5,5/6)",
-#              "FS-t(5,4/3)", "FS-t(5,3/4)"
-# )
+F_names <- c("Normal", 
+             "FS-t(5,26/25)", "FS-t(5,25/26)",
+             "FS-t(5,21/20)", "FS-t(5,20/21)",
+             "FS-t(5,6/5)", "FS-t(5,5/6)",
+             "FS-t(5,4/3)", "FS-t(5,3/4)"
+)
 
-F_names <- c("Normal", "Scaled t10", "Scaled t5", "Scaled t3")
-
-vtransform_list <- vlaplace_list[1:2]
+vtransform_list <- vlaplace_list
 V_names <- names(vtransform_list)
 
 kernelnames <- purrr::map_chr(bk_list,"name") 
@@ -84,7 +82,7 @@ gttabl <-  df |>
     tab_header(
       title=glue::glue('Size and power of v-transformed tests')
     ) |>
-    tab_footnote(paste0('Uniform kernel. 2^',log(nsims,2), ' trials with ', n_days,
+    tab_footnote(paste0(kernname, ' kernel. 2^',log(nsims,2), ' trials with ', n_days,
                         " observations per trial."))
 gtfile<- paste0(table_location,gtsavename)
 gt::gtsave(gttabl,filename = paste0(gtfile,".html"), inline_css=TRUE)

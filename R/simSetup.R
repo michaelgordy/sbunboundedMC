@@ -21,7 +21,7 @@ source("R/DefineKernels.R")
 num_cores <- as.integer(parallelly::availableCores(omit=8))
 table_location <- "output/"
 sim_location <- "simdata/"
-alpha_narrow <- c(0.98,1)
+alpha_narrow <- c(0.975,1)
 alpha_wide <-  c(0.95,1)
 
 # Standard "doOne" functions for simsalapar
