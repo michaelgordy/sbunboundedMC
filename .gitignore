@@ -3,7 +3,11 @@
 .Rhistory
 .RData
 .Ruserdata
+.vscode
 Meta
 simdata/*.rds
 simdata/*.RData
+output_publication
+output/*
+
 

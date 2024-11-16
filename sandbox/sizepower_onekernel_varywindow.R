@@ -11,10 +11,14 @@ blk_size <- nsims/2^5
 savedata <- FALSE  # TRUE to have simsalapar save simulation data
 gtsavename <- 'betav_varywindow'
 
+# Degrees of freedom
+degfr <- Inf
+dfstr <- glue::glue("_df{degfr}_")
+
 # Define two kernels, each with same beta parameters.
 # First has standard window, second has wider window
 betaparm <- list(c(1,0),c(1,2))
-betaparmstr <- 'FSN_(1,0)_(1,2)'  # '((1,0),(1,2))'
+betaparmstr <- '(1,0)_(1,2)'  # '((1,0),(1,2))'
 Zwide <- Znarrow <- list( name = 'Narrow',
                 type = ifelse(is.list(betaparm),'multi', 'mono'),
                 nu = nu_beta,
@@ -25,35 +29,15 @@ Zwide$name <- 'Wide'
 Zwide$support <- alpha_wide
 
 bk_list <- list(Znarrow, Zwide)
-# F_names <- c("Normal", "Scaled t10", "Scaled t5", "Scaled t3",
-#              "SS-t(10,1)", "SS-t(10,-1)", 
-#              "SS-t(5,1)", "SS-t(5,-1)", 
-#              "FS-t(10,6/5)", "FS-t(10,5/6)", 
-#              "FS-t(5,6/5)", "FS-t(5,5/6)",
-#              "FS-t(3,6/5)", "FS-t(3,5/6)",
-#              "FS-t(10,4/3)", "FS-t(10,3/4)", 
-#              "FS-t(5,4/3)", "FS-t(5,3/4)",
-#              "FS-t(3,4/3)", "FS-t(3,3/4)",
-#              "FS-t(10,3/2)", "FS-t(10,2/3)", 
-#              "FS-t(5,3/2)", "FS-t(5,2/3)",
-#              "FS-t(3,3/2)", "FS-t(3,2/3)"
-# )
 
-# F_names <- c("Normal", 
-#               "FS-t(5,26/25)", 
-#               "FS-t(5,21/20)", 
-#               "FS-t(5,6/5)", 
-#               "FS-t(5,4/3)"
-#  )
-
-F_names <- c("Normal", 
-             "FS-t(Inf,26/25)", 
-             "FS-t(Inf,21/20)", 
-             "FS-t(Inf,6/5)", 
-             "FS-t(Inf,4/3)"
+F_names <- c("Normal",             
+             glue::glue("Scaled t{degfr}"), 
+             glue::glue("FS-t({degfr},51/50)"), 
+             glue::glue("FS-t({degfr},26/25)"), 
+             glue::glue("FS-t({degfr},6/5)"), 
+             glue::glue("FS-t({degfr},4/3)")
 )
-
-#F_names <- c("Normal", "Scaled t10", "Scaled t5", "Scaled t3")
+if (is.infinite(degfr)) F_names <- F_names[-2]
 
 vtransform_list <- vlaplace_list
 V_names <- names(vtransform_list)
@@ -94,7 +78,7 @@ gttabl <-  df |>
     tab_footnote(paste0('Beta kernel with parameters ', betaparmstr, '. 2^',
                         log(nsims,2), ' trials with ', n_days,
                         " observations per trial."))
-gtfile<- paste0(table_location,gtsavename,betaparmstr)
+gtfile<- paste0(table_location,gtsavename,dfstr,betaparmstr)
 gt::gtsave(gttabl,filename = paste0(gtfile,".html"), inline_css=TRUE)
 gt::gtsave(gttabl,filename = paste0(gtfile,".tex"))
 

@@ -62,8 +62,8 @@ rsst_fs <- function (df, gamma=1)
 # Return named list with a pair of FS-t(m,k/(k+1)) and FS-t(m,(k+1)/k)
 rsst_fs_list <- function(m,k) {
   list(rsst_fs(m,(k+1)/k), rsst_fs(m,k/(k+1))) |>
-     setNames(c(glue::glue("FS-t({m},{k}/{k+1})"),
-                glue::glue("FS-t({m},{k+1}/{k})")))
+     setNames(c(glue::glue("FS-t({m},{k+1}/{k})"),
+                glue::glue("FS-t({m},{k}/{k+1})")))
 }
   
 # Named list of available F models
@@ -107,7 +107,8 @@ Fmodel_list <-  list(
  purrr::map(nuval, ~rsst_fs_list(.x,3)),
  purrr::map(nuval, ~rsst_fs_list(.x,5)),
  purrr::map(nuval, ~rsst_fs_list(.x,20)),
- purrr::map(nuval, ~rsst_fs_list(.x,25))
+ purrr::map(nuval, ~rsst_fs_list(.x,25)),
+ purrr::map(nuval, ~rsst_fs_list(.x,50))
  ) |> purrr::list_flatten() |> purrr::list_flatten() 
 
 r_pit_sn <- function(n, nu, alf) {

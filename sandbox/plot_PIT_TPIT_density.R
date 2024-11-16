@@ -39,6 +39,7 @@ plotdPIT <- function(degfr, xlims=c(0,1), ylims=c(0,2), xanno=0.82, yanno=0.1, l
   u <- u[u>=xlims[1] & u<=xlims[2]]
   dat <- bind_rows(
     tibble(u=u,cdf=dPIT(u,degfr,gamma=gma), delta="identity"),
+    tibble(u=u,cdf=dPITdelta(u,degfr,gamma=gma,1/3), delta="1/3"),
     tibble(u=u,cdf=dPITdelta(u,degfr,gamma=gma,1/2), delta="1/2"),
     tibble(u=u,cdf=dPITdelta(u,degfr,gamma=gma,2/3), delta="2/3")
   ) |>
@@ -53,7 +54,7 @@ plotdPIT <- function(degfr, xlims=c(0,1), ylims=c(0,2), xanno=0.82, yanno=0.1, l
     geom_hline(yintercept=1, linetype=3) +
     theme_bw() +
     labs(x='v-transformed PIT', y='density', color=expression(delta))  +
-    scale_colour_manual(values=c("blue","red","green")) +
+    scale_colour_manual(values=c("blue","purple","red","green")) +
     theme(legend.position = "bottom", legend.direction="horizontal",
           legend.title=element_text(size=legfont),
           legend.text=element_text(size=legfont)) +

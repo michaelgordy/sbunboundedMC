@@ -12,20 +12,45 @@ The power of our backtests is highly sensitive to the choice of v-transform and 
 * The skewness of $X$ is increasing in $\gamma$.
 
 ```{r}
+library(ggplot2)
 source("DefineFmodels.R")
 source("DefineVtransforms.R")
 
 n <- 500000  # sample size
-uu <- runif(n) # to facilitate comparison across FS parameter values
+# uu <- runif(n) # to facilitate comparison across FS parameter values
 
 # For df=10, gma=6/5 similar to alpha=1
 # For df=5, gma=6/5 similar to alpha=2/3
 
-df <- 5
-gma <- 6/5
+df <- Inf
+gma <- 3/2
 
-x <- qsst_fs(uu,df,gma)
-xsst <- rscaledskewed_t_sn(df,2/3)(n)
+x1 <- rsst_fs(df,gma)(n)
+# xsst <- rscaledskewed_t_sn(df,2/3)(n)
+
+Fx1 <- ecdf(pnorm(x1))
+#Fxsst <- ecdf(pnorm(xsst))
+
+# Can I do this in closed form?
+pFSNPIT <- function(u) {
+  0
+}
+  
+x2 <- rsst_fs(df,1/gma)(n)
+Fx2 <- ecdf(pnorm(x2))
+
+x <- seq(0,1,by=0.001)
+df <- data.frame(x=c(x,x), 
+                 y=c(Fx1(x), Fx2(x)),
+                 gamma=c(rep('3/2',length(x)), rep('2/3',length(x))))
+ggplot(df, aes(x=x,y=y,color=gamma, group=gamma)) + 
+    geom_line() + geom_abline(linetype=3) + xlim(c(0,1)) + ylim(c(0,1)) +
+  theme_bw() +
+  theme(legend.position = c(0.8,0.1), legend.direction="horizontal") +
+  labs(x='u', y=expression("Pr(PIT"<="u)"), color="\u03B3") 
+
+ggsave('FSnormalPIT.pdf')
+
 ```
 
 The value of $\gamma=6/5$ delivers skewness around 2.9, which is comparable to the 

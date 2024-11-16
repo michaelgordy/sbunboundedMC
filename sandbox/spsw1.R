@@ -6,7 +6,7 @@ source("R/simSetup.R")
 n_days <- 500
 nsims <- 2^16
 blk_size <- nsims/2^5
-kernwindow <- c(0.95,1)
+kernwindow <- c(0.975,1)
 savedata <- FALSE  # TRUE to have simsalapar save simulation data
 gtsavename <- 'spsw_beta1'
 

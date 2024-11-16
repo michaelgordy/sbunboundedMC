@@ -1,16 +1,18 @@
 # Plot cdf of PIT and transformed PIT under FS-t misspecification
 library(ggplot2)
 library(patchwork)
+library(latex2exp)
 library(dplyr)
 library(skewt)
 source("R/DefineFmodels.R")
 
 df <- 5
-gma <- 6/5
+gmak <- 25
+gma <- (gmak+1)/gmak
 legfont <- 11
 
-du <- 0.0005
-u <- seq(0,0.9995,by=du)
+du <- 0.00025
+u <- seq(0,1-du/2,by=du)
 
 dPIT <- function(u, df, gamma=1) {
   z <- qnorm(u)
@@ -49,25 +51,33 @@ rPITdelta <-function(n, df, gamma=1, delta=1/2) {
 # lines(u,pSim(u),col=2)
 
 
-plotpPIT <- function(degfr, xlims=c(0,1), ylims=c(0,1), xanno=0.82, yanno=0.1) {
+plotpPIT <- function(degfr, xlims=c(0,1), ylims=c(0,1), xanno=0.82, yanno=0.1, drophalf=FALSE) {
   u <- u[u>=xlims[1] & u<=xlims[2]]
   dat <- bind_rows(
     tibble(u=u,cdf=pPIT(u,degfr,gamma=gma), delta="identity"),
+    tibble(u=u,cdf=pPITdelta(u,degfr,gamma=gma,1/3), delta="1/3"),
     tibble(u=u,cdf=pPITdelta(u,degfr,gamma=gma,1/2), delta="1/2"),
     tibble(u=u,cdf=pPITdelta(u,degfr,gamma=gma,2/3), delta="2/3")
   ) |>
-    mutate(delta=as.factor(delta))
-  if (is.infinite(degfr)) {
-    dflab <- "df==infinity"
-  } else {
-    dflab <- paste0("df==",as.character(degfr))
+    mutate(delta=factor(delta, levels=c('identity','1/3','1/2','2/3')))
+  linecol <- c("blue","purple","red","green")
+  if (drophalf) {
+    linecol <- linecol[-3]
+    dat <- filter(dat, delta!="1/2")
   }
+  if (is.infinite(degfr)) {
+    dflab <- as.character(expression(paste0(zeta,"=",infinity))) #\U03B6\U003D\U221E"))
+  } else {
+    dflab <- TeX(paste0("$\\zeta=",as.character(degfr),
+                        ",\ \\gamma=", glue::glue("{gmak+1}/{gmak}"),"$"))
+  }
+#  
   p1 <- ggplot(dat, aes(x=u,y=cdf,color=delta, group=delta)) +
     geom_line() + xlim(xlims) + ylim(ylims) +
     geom_abline(intercept=0, slope=1, linetype=3) +
     theme_bw() +
-    labs(x='v-transformed PIT', y='cdf', color=expression(delta))  +
-    scale_colour_manual(values=c("blue","red","green")) +
+    labs(y=expression(Pr(T(P[t]) <= u)), x=expression(u), color=expression(delta))  +
+    scale_colour_manual(values=linecol) +
     theme(legend.position = "bottom", legend.direction="horizontal",
           legend.title=element_text(size=legfont),
           legend.text=element_text(size=legfont)) +
@@ -76,12 +86,12 @@ plotpPIT <- function(degfr, xlims=c(0,1), ylims=c(0,1), xanno=0.82, yanno=0.1) {
   p1
 }
 
-pfull <- plotpPIT(df)
-ptail <- plotpPIT(df, c(0.95,1),c(0.92,1),0.99,0.925)
+#pfull <- plotpPIT(df)
+ptail <- plotpPIT(df, c(0.95,1),c(0.945,1),0.9928,0.948, drophalf=TRUE)
 # pN <- plotpPIT(Inf)
 # p5 <- plotpPIT(5)
 # 
 # # ggsave mishandles the gamma in legend
-# grDevices::cairo_pdf("output/PITcdf.pdf", width=7, height=3.5)
-# pN+p5
-# dev.off()
+grDevices::cairo_pdf("output/vPITcdftail.pdf", width=7, height=3.5)
+ptail
+dev.off()
