@@ -1,6 +1,8 @@
-# Size and Power of Unbounded monovariate beta kernels
+# size and power of v-transformed tests 
 # Assumes current directory is the project folder
-# Michael Gordy
+
+# Choice of degfr determines whether we generate table 5, 6, or 7
+makeTable <- 7
 
 source("R/simSetup.R")
 source("R/DefineVtransforms.R")
@@ -9,16 +11,37 @@ nsims <- 2^16
 level <- 0.05
 blk_size <- nsims/2^5
 savedata <- FALSE  # TRUE to have simsalapar save simulation data
-gtsavename <- 'betav_varywindow'
+gtsavename <- glue::glue("table{makeTable}")
+
 
 # Degrees of freedom
-degfr <- Inf
-dfstr <- glue::glue("_df{degfr}_")
+if (makeTable==5) {
+  F_names <- c("Normal", "Scaled t10", "Scaled t5", "Scaled t3")
+} else {
+  if (makeTable==6) {
+    degfr <- Inf
+    F_names <- c("Normal",             
+                 glue::glue("FS-t({degfr},51/50)"), 
+                 glue::glue("FS-t({degfr},26/25)"), 
+                 glue::glue("FS-t({degfr},6/5)"), 
+                 glue::glue("FS-t({degfr},4/3)")
+    )
+  } else {    # Table 7
+    degfr <- 5
+    F_names <- c("Normal",             
+                 glue::glue("Scaled t{degfr}"), 
+                 glue::glue("FS-t({degfr},51/50)"), 
+                 glue::glue("FS-t({degfr},26/25)"), 
+                 glue::glue("FS-t({degfr},6/5)"), 
+                 glue::glue("FS-t({degfr},4/3)")
+    )
+  }
+}
 
 # Define two kernels, each with same beta parameters.
 # First has standard window, second has wider window
 betaparm <- list(c(1,0),c(1,2))
-betaparmstr <- '(1,0)_(1,2)'  # '((1,0),(1,2))'
+# betaparmstr <- '(1,0)_(1,2)'  # '((1,0),(1,2))'
 Zwide <- Znarrow <- list( name = 'Narrow',
                 type = ifelse(is.list(betaparm),'multi', 'mono'),
                 nu = nu_beta,
@@ -30,16 +53,8 @@ Zwide$support <- alpha_wide
 
 bk_list <- list(Znarrow, Zwide)
 
-F_names <- c("Normal",             
-             glue::glue("Scaled t{degfr}"), 
-             glue::glue("FS-t({degfr},51/50)"), 
-             glue::glue("FS-t({degfr},26/25)"), 
-             glue::glue("FS-t({degfr},6/5)"), 
-             glue::glue("FS-t({degfr},4/3)")
-)
-if (is.infinite(degfr)) F_names <- F_names[-2]
-
 vtransform_list <- vlaplace_list
+if (makeTable==5) vtransform_list<-vtransform_list[1:2]
 V_names <- names(vtransform_list)
 
 kernelnames <- purrr::map_chr(bk_list,"name") 
@@ -78,7 +93,7 @@ gttabl <-  df |>
     tab_footnote(paste0('Beta kernel with parameters ', betaparmstr, '. 2^',
                         log(nsims,2), ' trials with ', n_days,
                         " observations per trial."))
-gtfile<- paste0(table_location,gtsavename,dfstr,betaparmstr)
+gtfile<- paste0(table_location,gtsavename)
 gt::gtsave(gttabl,filename = paste0(gtfile,".html"), inline_css=TRUE)
-gt::gtsave(gttabl,filename = paste0(gtfile,".tex"))
+#gt::gtsave(gttabl,filename = paste0(gtfile,".tex"))
 
